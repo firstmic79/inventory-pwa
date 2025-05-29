@@ -1,111 +1,78 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Nosh Inventory Manager</title>
-
-  <!-- PWA Manifest -->
-  <link rel="manifest" href="manifest.json">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <link rel="manifest" href="manifest.json" />
   <link rel="apple-touch-icon" href="apple-touch-icon.png" />
-  <meta name="theme-color" content="#4CAF50"/>
-
+  <meta name="theme-color" content="#4CAF50" />
   <style>
     body {
       font-family: Arial, sans-serif;
       background-color: #e8f5e9;
-      color: #333;
-      padding: 20px;
       max-width: 500px;
       margin: auto;
+      padding: 20px;
     }
-
-    h1 {
-      color: #2e7d32;
-      text-align: center;
-    }
-
     label {
       display: block;
       margin-top: 10px;
-      font-weight: bold;
     }
-
     input, select {
       width: 100%;
       padding: 8px;
       margin-top: 4px;
-      margin-bottom: 10px;
-      border: 1px solid #ccc;
-      border-radius: 4px;
     }
-
     button {
       width: 100%;
-      padding: 10px;
+      margin-top: 15px;
       background-color: #4CAF50;
       color: white;
       border: none;
+      padding: 10px;
       font-size: 16px;
-      border-radius: 4px;
-      margin-top: 10px;
-      cursor: pointer;
     }
-
-    button:hover {
-      background-color: #388e3c;
-    }
-
     .message {
       text-align: center;
+      margin-top: 15px;
       font-weight: bold;
-      margin-top: 20px;
     }
   </style>
-</head>
-<body>
-  <h1>Nosh Inventory</h1>
-
-  <label for="productId">Product ID</label>
-  <input type="text" id="productId" />
-
-  <label for="name">Product Name</label>
-  <input type="text" id="name" />
-
-  <label for="category">Category</label>
-  <select id="category">
-    <option value="Snacks">Snacks</option>
-    <option value="Drinks">Drinks</option>
-    <option value="Meals">Meals</option>
-  </select>
-
-  <label for="stock">Current Stock</label>
-  <input type="number" id="stock" />
-
-  <label for="reorder">Reorder Level</label>
-  <input type="number" id="reorder" />
-
-  <label for="restock">Restock Qty</label>
-  <input type="number" id="restock" />
-
-  <label for="supplier">Supplier</label>
-  <select id="supplier">
-    <option value="Sam's Club">Sam's Club</option>
-    <option value="Costco">Costco</option>
-    <option value="Amazon">Amazon</option>
-  </select>
-
-  <label for="cost">Unit Cost</label>
-  <input type="number" id="cost" step="0.01" />
-
-  <label for="price">Sale Price</label>
-  <input type="number" id="price" step="0.01" />
-
-  <button onclick="adjustInventory()">Adjust Inventory</button>
-
-  <div class="message" id="message"></div>
-
   <script>
+    document.addEventListener("DOMContentLoaded", () => {
+      loadDropdowns();
+      document.getElementById("productId").addEventListener("blur", prefillIfExists);
+    });
+
+    function loadDropdowns() {
+      google.script.run.withSuccessHandler(data => {
+        const catSelect = document.getElementById("category");
+        const supSelect = document.getElementById("supplier");
+        catSelect.innerHTML = "";
+        supSelect.innerHTML = "";
+        data.categories.forEach(cat => catSelect.add(new Option(cat, cat)));
+        data.suppliers.forEach(sup => supSelect.add(new Option(sup, sup)));
+      }).getDropdownOptions();
+    }
+
+    function prefillIfExists() {
+      const id = document.getElementById("productId").value.trim();
+      if (!id) return;
+      google.script.run.withSuccessHandler(res => {
+        if (res.found) {
+          const item = res.item;
+          document.getElementById("name").value = item.name;
+          document.getElementById("category").value = item.category;
+          document.getElementById("stock").value = item.stock;
+          document.getElementById("reorder").value = item.reorder;
+          document.getElementById("restock").value = item.restock;
+          document.getElementById("supplier").value = item.supplier;
+          document.getElementById("cost").value = item.cost;
+          document.getElementById("price").value = item.price;
+        }
+      }).getProductById(id);
+    }
+
     function adjustInventory() {
       const item = {
         productId: document.getElementById("productId").value.trim(),
@@ -119,20 +86,45 @@
         price: +document.getElementById("price").value
       };
 
-      fetch("https://script.google.com/macros/s/AKfycbw4n9YHZqkCFm4tm3xpWLvxjsHLBJ-AZKx5XFJgRBs/dev", {
-        method: "POST",
-        mode: "no-cors",
-        headers: {
-          "Content-Type": "application/json"
-        },
-        body: JSON.stringify(item)
-      });
-
-      document.getElementById("message").innerText = "Inventory submitted.";
-      setTimeout(() => {
-        document.getElementById("message").innerText = "";
-      }, 3000);
+      google.script.run.withSuccessHandler(() => {
+        document.getElementById("message").innerText = "Inventory adjusted!";
+      }).withFailureHandler(err => {
+        document.getElementById("message").innerText = err.message;
+      }).saveInventoryItem(item);
     }
   </script>
+</head>
+<body>
+  <h2>Nosh Inventory Manager</h2>
+
+  <label for="productId">Product ID</label>
+  <input type="text" id="productId" />
+
+  <label for="name">Product Name</label>
+  <input type="text" id="name" />
+
+  <label for="category">Category</label>
+  <select id="category"></select>
+
+  <label for="stock">Current Stock</label>
+  <input type="number" id="stock" />
+
+  <label for="reorder">Reorder Level</label>
+  <input type="number" id="reorder" />
+
+  <label for="restock">Restock Qty</label>
+  <input type="number" id="restock" />
+
+  <label for="supplier">Supplier</label>
+  <select id="supplier"></select>
+
+  <label for="cost">Unit Cost</label>
+  <input type="number" step="0.01" id="cost" />
+
+  <label for="price">Sale Price</label>
+  <input type="number" step="0.01" id="price" />
+
+  <button onclick="adjustInventory()">Adjust Inventory</button>
+  <div id="message" class="message"></div>
 </body>
 </html>
