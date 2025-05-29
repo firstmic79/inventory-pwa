@@ -1,20 +1,19 @@
 {
-  "name": "Inventory Manager",
+  "name": "Nosh Inventory Manager",
   "short_name": "Inventory",
   "start_url": ".",
   "display": "standalone",
   "background_color": "#4CAF50",
   "theme_color": "#4CAF50",
-  "orientation": "portrait",
   "icons": [
     {
-      "src": "https://www.nosh-network-vending.org/assets/img/logo512.png",
-      "sizes": "512x512",
+      "src": "https://firstmic79.github.io/inventory-pwa/icon-192.png",
+      "sizes": "192x192",
       "type": "image/png"
     },
     {
-      "src": "https://www.nosh-network-vending.org/assets/img/logo192.png",
-      "sizes": "192x192",
+      "src": "https://firstmic79.github.io/inventory-pwa/icon-512.png",
+      "sizes": "512x512",
       "type": "image/png"
     }
   ]
